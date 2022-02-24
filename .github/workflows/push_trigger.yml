@@ -13,7 +13,7 @@ jobs:
     env: 
       NAMESPACE: ${{ secrets. dev_namespace_docker_hub }}
       SERVICE_NAME: mosip-file-server
-      SERVICE_LOCATION: build/file-server
+      SERVICE_LOCATION: mosip-file-server
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
