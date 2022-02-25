@@ -42,6 +42,4 @@ echo "public key creation complete"
 
 sleep 5
 
-rm -fr temp.txt result.txt
-
 exec "$@"
