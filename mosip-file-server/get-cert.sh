@@ -4,7 +4,7 @@
 date=$(date --utc +%FT%T.%3NZ)
 
 #get secret
-clientsecret_env=$(curl $spring_config_url_env/config/*/default/$spring_config_label_env/registration-processor-default.properties | sed -n '/token.request.secretKey=/,/ /p' | cut -d '#' -f1 |  sed 's/.*secretKey=//; s/$\n.*//' | awk 'NR==1{print $1}')
+clientsecret_env=$(curl $spring_config_url_env/*/default/$spring_config_label_env/registration-processor-default.properties | sed -n '/token.request.secretKey=/,/ /p' | cut -d '#' -f1 |  sed 's/.*secretKey=//; s/$\n.*//' | awk 'NR==1{print $1}')
 
 #echo "* Request for authorization"
 curl -s -D - -o /dev/null -X "POST" \
@@ -25,7 +25,8 @@ curl -s -D - -o /dev/null -X "POST" \
 
 sleep 10
 #TOKEN=$(cat -n temp.txt | sed -n '/Authorization:/,/\;.*/pI' |  sed 's/.*Authorization://i; s/$\n.*//I' | awk 'NR==1{print $1}')
-TOKEN=$(cat -n temp.txt | grep -i Authorization: |  sed 's/.*Authorization://i; s/$\n.*//' | awk 'NR==1{print $1}')
+#TOKEN=$(cat -n temp.txt | grep -i Authorization: |  sed 's/.*Authorization://i; s/$\n.*//' | awk 'NR==1{print $1}')
+TOKEN=$( cat temp.txt | awk '/[aA]uthorization:/{print $2}' | sed -z 's/\n//g' | sed -z 's/\r//g')
 
 curl -X "GET" \
   -H "Accept: application/json" \
