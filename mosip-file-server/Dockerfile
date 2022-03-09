@@ -48,7 +48,7 @@ ENV spring_config_url_env=${spring_config_url}
 
 # install packages and create user
 RUN apt-get -y update \
-&& apt-get install -y unzip curl git npm python \
+&& apt-get install -y unzip curl git npm python vim \
 && groupadd -g ${container_user_gid} ${container_user_group} \
 && useradd -u ${container_user_uid} -g ${container_user_group} -s /bin/sh -m ${container_user} \
 && mkdir -p /var/run/nginx /var/tmp/nginx \
@@ -78,7 +78,7 @@ ENV base_path_apk=/home/${container_user}/files/mobileapp
 RUN chown -R ${container_user}:${container_user} /home/${container_user}
 
 # select container user for all tasks
-USER ${container_user_uid}:${container_user_gid}
+#USER ${container_user_uid}:${container_user_gid}
 
 EXPOSE 8080
 
