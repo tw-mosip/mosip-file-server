@@ -6,6 +6,7 @@ on:
       - 1.2.*
       - release-*
       - develop
+      - develop*
   
 jobs:
   build-file-server:
