@@ -69,11 +69,11 @@ ADD get-cert.sh get-cert.sh
 
 RUN chmod +x get-cert.sh
 
-RUN cd /home/${container_user} && mkdir -p files/mosipvc && mkdir -p files/mobileapp
+RUN cd /home/${container_user} && mkdir -p .well-known/mosipvc && mkdir -p .well-known/mobileapp
 
-ENV base_path_mosipvc=/home/${container_user}/files/mosipvc
+ENV base_path_mosipvc=/home/${container_user}/.well-known/mosipvc
 
-ENV base_path_apk=/home/${container_user}/files/mobileapp
+ENV base_path_apk=/home/${container_user}/.well-known/mobileapp
 
 RUN chown -R ${container_user}:${container_user} /home/${container_user}
 
