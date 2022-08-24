@@ -41,6 +41,9 @@ sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\
 
 echo "public key creation complete"
 
+curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/mosip-context.json > $base_path_mosipvc/mosip-context.json
+echo "Downloaded mosip-context.json from config-server to $base_path_mosipvc/mosip-context.json !!!"
+
 sleep 5
 
 exec "$@"
