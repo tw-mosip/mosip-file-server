@@ -4,7 +4,13 @@
 date=$(date --utc +%FT%T.%3NZ)
 
 #get secret
-clientsecret_env=$(curl $spring_config_url_env/*/default/$spring_config_label_env/registration-processor-default.properties | sed -n '/token.request.secretKey=/,/ /p' | cut -d '#' -f1 |  sed 's/.*secretKey=//; s/$\n.*//' | awk 'NR==1{print $1}')
+clientsecret_env=$(curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/registration-processor-$active_profile_env.properties | sed -n '/token.request.secretKey=/,/ /p' | cut -d '#' -f1 |  sed 's/.*secretKey=//; s/$\n.*//' | awk 'NR==1{print $1}')
+
+if [[ $clientsecret_env =~ '{cipher}' ]]; then
+   echo "It clientsecret_env is encrypted; Decrypting";
+   clientsecret_env=$( echo $clientsecret_env | sed 's/{cipher}//g' )
+   clientsecret_env=$( curl $spring_config_url_env/decrypt -d $clientsecret_env )
+fi
 
 #echo "* Request for authorization"
 curl -s -D - -o /dev/null -X "POST" \
