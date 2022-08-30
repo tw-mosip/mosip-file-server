@@ -4,7 +4,13 @@
 date=$(date --utc +%FT%T.%3NZ)
 
 #get secret
-clientsecret_env=$( curl $spring_config_url_env/decrypt -d $(curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/registration-processor-$active_profile_env.properties | sed -n '/token.request.secretKey=/,/ /p' | cut -d '#' -f1 |  sed 's/.*secretKey=//; s/$\n.*//' | awk 'NR==1{print $1}' | awk -F '}' '{print $2}') )
+clientsecret_env=$(curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/registration-processor-$active_profile_env.properties | sed -n '/token.request.secretKey=/,/ /p' | cut -d '#' -f1 |  sed 's/.*secretKey=//; s/$\n.*//' | awk 'NR==1{print $1}')
+
+if [[ $clientsecret_env =~ '{cipher}' ]]; then
+   echo "It clientsecret_env is encrypted; Decrypting";
+   clientsecret_env=$( echo $clientsecret_env | sed 's/{cipher}//g' )
+   clientsecret_env=$( curl $spring_config_url_env/decrypt -d $clientsecret_env )
+fi
 
 #echo "* Request for authorization"
 curl -s -D - -o /dev/null -X "POST" \
@@ -40,6 +46,12 @@ openssl x509 -pubkey -noout -in cert.pem  > pubkey.pem
 sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
 
 echo "public key creation complete"
+
+curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/mosip-context.json > $base_path_mosipvc/mosip-context.json
+echo "Downloaded mosip-context.json from config-server to $base_path_mosipvc/mosip-context.json !!!"
+
+curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/controller.json > $base_path_mosipvc/controller.json
+echo "Downloaded controller.json from config-server to $base_path_mosipvc/controller.json !!!"
 
 sleep 5
 
