@@ -45,7 +45,13 @@ curl -X "GET" \
   "$KEYMANAGER_URL/v1/keymanager/getCertificate?applicationId=KERNEL&referenceId=SIGN" > result.txt
 
 RESPONSE_COUNT=$( cat result.txt | jq .response )
-if [[ $RESPONSE_COUNT =~ null ]]; then
+echo -e " =================== result.txt ====================== \n$( cat result.txt )\n"
+if [[ -z $RESPONSE_COUNT ]]; then
+  echo "Unable to \"response\" read result.txt file; EXITING";
+  exit 1;
+fi
+
+if [[ $RESPONSE_COUNT == null || -z $RESPONSE_COUNT ]]; then
   echo "No response from keymanager server; EXITING";
   exit 1;
 fi
@@ -54,12 +60,11 @@ RESULT=$(cat result.txt)
 CERT=$(echo $RESULT | sed 's/.*certificate\":\"//gi' | sed 's/\".*//gI')
 
 if [[ -z $CERT ]]; then
-  echo "Unable to get certificate from keymanager; EXITING";
+  echo "Unable to read certificate from result.txt; EXITING";
   exit 1;
 fi
 
-echo -e "\n CERT = $CERT"
-
+echo -e "\n EXTRACTED CERTIFICATE = $CERT"
 echo $CERT | sed -e 's/\\n/\n/g' > cert.pem
 openssl x509 -pubkey -noout -in cert.pem  > pubkey.pem
 sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
