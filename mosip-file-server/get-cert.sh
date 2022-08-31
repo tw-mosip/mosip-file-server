@@ -37,7 +37,6 @@ if [[ -z $TOKEN ]]; then
 fi
 
 echo -e "\nGot Authorization token from authmanager"
-echo -e "TOKEN = $TOKEN\n"
 
 curl -X "GET" \
   -H "Accept: application/json" \
@@ -64,7 +63,6 @@ if [[ -z $CERT ]]; then
   exit 1;
 fi
 
-echo -e "\n EXTRACTED CERTIFICATE = $CERT"
 echo $CERT | sed -e 's/\\n/\n/g' > cert.pem
 openssl x509 -pubkey -noout -in cert.pem  > pubkey.pem
 sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
