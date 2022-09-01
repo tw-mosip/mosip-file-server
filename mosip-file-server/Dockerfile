@@ -48,7 +48,7 @@ ENV spring_config_url_env=${spring_config_url}
 
 # install packages and create user
 RUN apt-get -y update \
-&& apt-get install -y unzip zip curl git npm python vim \
+&& apt-get install -y unzip zip curl git wget jq npm python vim \
 && groupadd -g ${container_user_gid} ${container_user_group} \
 && useradd -u ${container_user_uid} -g ${container_user_group} -s /bin/sh -m ${container_user} \
 && mkdir -p /var/run/nginx /var/tmp/nginx \
