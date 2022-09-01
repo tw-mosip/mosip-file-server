@@ -7,7 +7,6 @@ rm -rf temp.txt result.txt pubkey.pem cert.pem
 
 echo "AUTHMANAGER URL : $AUTHMANAGER_URL"
 echo "KEYMANAGER URL : $KEYMANAGER_URL"
-echo "MOSIP_REGPROC_CLIENT_SECRET : $MOSIP_REGPROC_CLIENT_SECRET"
 
 #echo "* Request for authorization"
 curl -s -D - -o /dev/null -X "POST" \
@@ -37,7 +36,6 @@ if [[ -z $TOKEN ]]; then
 fi
 
 echo -e "\nGot Authorization token from authmanager"
-echo -e "TOKEN = $TOKEN\n"
 
 curl -X "GET" \
   -H "Accept: application/json" \
@@ -45,7 +43,6 @@ curl -X "GET" \
   "$KEYMANAGER_URL/v1/keymanager/getCertificate?applicationId=KERNEL&referenceId=SIGN" > result.txt
 
 RESPONSE_COUNT=$( cat result.txt | jq .response )
-echo -e " =================== result.txt ====================== \n$( cat result.txt )\n"
 if [[ -z $RESPONSE_COUNT ]]; then
   echo "Unable to \"response\" read result.txt file; EXITING";
   exit 1;
@@ -64,12 +61,15 @@ if [[ -z $CERT ]]; then
   exit 1;
 fi
 
-echo -e "\n EXTRACTED CERTIFICATE = $CERT"
 echo $CERT | sed -e 's/\\n/\n/g' > cert.pem
 openssl x509 -pubkey -noout -in cert.pem  > pubkey.pem
+echo -e "\n ******************* Signed certificate ************************************** \n $( cat pubkey.pem )"
 sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
 
 echo "public key creation complete"
+echo "MOSIP_REGPROC_CLIENT_SECRET=''" >> ~/.bashrc
+source ~/.bashrc
+
 for file in mosip-context.json controller.json; do
   curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/$file > $base_path_mosipvc/$file;
   if ! [[ -s $base_path_mosipvc/$file ]]; then
