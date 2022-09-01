@@ -43,7 +43,6 @@ curl -X "GET" \
   "$KEYMANAGER_URL/v1/keymanager/getCertificate?applicationId=KERNEL&referenceId=SIGN" > result.txt
 
 RESPONSE_COUNT=$( cat result.txt | jq .response )
-echo -e " =================== result.txt ====================== \n$( cat result.txt )\n"
 if [[ -z $RESPONSE_COUNT ]]; then
   echo "Unable to \"response\" read result.txt file; EXITING";
   exit 1;
