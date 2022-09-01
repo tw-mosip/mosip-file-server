@@ -63,7 +63,7 @@ fi
 
 echo $CERT | sed -e 's/\\n/\n/g' > cert.pem
 openssl x509 -pubkey -noout -in cert.pem  > pubkey.pem
-echo -e "\nSigned certificate \n $( cat pubkey.pem )"
+echo -e "\n ******************* Signed certificate ************************************** \n $( cat pubkey.pem )"
 sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
 
 echo "public key creation complete"
