@@ -67,7 +67,7 @@ echo -e "\n ******************* Signed certificate *****************************
 sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
 
 echo "public key creation complete"
-unset MOSIP_REGPROC_CLIENT_SECRET
+export MOSIP_REGPROC_CLIENT_SECRET=''
 
 for file in mosip-context.json controller.json; do
   curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/$file > $base_path_mosipvc/$file;
