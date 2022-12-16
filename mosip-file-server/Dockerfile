@@ -24,13 +24,23 @@ ARG container_user_gid=1001
 
 # can be passed during Docker build as build time environment for artifactory URL
 
-ARG authurl
+ARG AUTHMANAGER_URL
 
-ARG keyurl
+ARG KEYMANAGER_URL
+
+ARG IDA_INTERNAL_URL
+
+ARG KEYCLOAK_CLIENT_ID
+
+ARG KEYCLOAK_CLIENT_PASSWORD
+
+ARG AUTH_APP_ID
 
 ARG spring_config_url
 
 ARG spring_config_label
+
+ARG active_profile_env
 
 ARG version
 
@@ -38,13 +48,23 @@ ENV app_version=${version}
 # environment variable to pass artifactory url, at docker runtime
 ENV artifactory_url_env=${artifactory_url}
 
-ENV auth_url_env=${authurl}
+ENV AUTHMANAGER_URL=${AUTHMANAGER_URL}
 
-ENV key_url_env=${keyurl}
+ENV KEYMANAGER_URL=${KEYMANAGER_URL}
+
+ENV IDA_INTERNAL_URL=${IDA_INTERNAL_URL}
+
+ENV KEYCLOAK_CLIENT_ID=${CLIENT_ID}
+
+ENV KEYCLOAK_CLIENT_PASSWORD=${KEYCLOAK_CLIENT_PASSWORD}
+
+ENV AUTH_APP_ID=${AUTH_APP_ID}
 
 ENV spring_config_label_env=${spring_config_label}
 
 ENV spring_config_url_env=${spring_config_url}
+
+ENV active_profile_env=${active_profile_env}
 
 # install packages and create user
 RUN apt-get -y update \
@@ -65,15 +85,17 @@ ADD ./download.conf /etc/nginx/include/download.conf
 
 #ADD ./*.apk /home/${container_user}/mobileapp/resident-app.apk
 
-ADD get-cert.sh get-cert.sh
+ADD *.sh ./
 
-RUN chmod +x get-cert.sh
+RUN chmod +x *.sh
 
-RUN cd /home/${container_user} && mkdir -p mosip-file-server/.well-known/mosipvc && mkdir -p mosip-file-server/files/mobileapp
+ENV base_path_mosipvc=/home/${container_user}/mosip-file-server/.well-known/mosipvc/
 
-ENV base_path_mosipvc=/home/${container_user}/mosip-file-server/.well-known/mosipvc
+ENV base_path_apk=/home/${container_user}/mosip-file-server/files/mobileapp/
 
-ENV base_path_apk=/home/${container_user}/mosip-file-server/files/mobileapp
+ENV base_path_mosip_certs=/home/${container_user}/mosip-file-server/mosip-certs/
+
+RUN cd /home/${container_user} && mkdir -p ${base_path_mosipvc} ${base_path_apk} ${base_path_mosip_certs}
 
 RUN chown -R ${container_user}:${container_user} /home/${container_user}
 
@@ -82,6 +104,4 @@ USER ${container_user_uid}:${container_user_gid}
 
 EXPOSE 8080
 
-ENTRYPOINT ["./get-cert.sh"]
-
-CMD ["/bin/bash","-c","echo 'starting nginx'; nginx ; sleep infinity"]
+ENTRYPOINT ["./entrypoint.sh"]
