@@ -1,7 +1,13 @@
 # mosip-file-server
-mosip-file-server is used to share .well-known URIs related to DIDs, Hubs, and Agents. with MOSIP partners, open-source communities, etc.
+
+mosip-file-server used to share MOSIP's public certs, apk files, and .well-known URIs related to DIDs, Hubs, and Agents with MOSIP partners, open-source communities, etc...
+
 ## .well-known
-* For v2, provide the JSON files under `https://github.com/mosip/mosip-infra/tree/{branch-name}/deployment/sandbox-v2/roles/mosip-file-server/templates` in [mosip-infra](https://github.com/mosip/mosip-infra.git).
-* For v3, provide the JSONs in `https://github.com/mosip/mosip-helm/blob/{branch-name}/charts/mosip-file-server/templates/configmaps.yaml` file in [mosip-helm](https://github.com/mosip/mosip-helm.git).
+* Make sure to add the `controller.json` and `mosip-context.json` files to the `config server`.
+* mosip-file-server will download the JSON files from the config-server.
+
 ## mobileapp
-* Provide the mobileapp apk/zip files under mosip-file-server's persistence volume storage.
+* Provide the publicly and privately accessible apk/zip links for mobileapp.
+
+## mosip-certs
+* Contains the list of MOSIP's public certificates.
