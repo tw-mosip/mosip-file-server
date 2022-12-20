@@ -3,11 +3,11 @@
 #get date
 date=$(date --utc +%FT%T.%3NZ)
 
-rm -rf temp.txt result.txt pubkey.pem cert.pem
+rm -rf ida_temp.txt ida_result.txt ida_pubkey.pem ida_cert.pem
 
-echo -e "\n Generate MOSIP's VC PUBLIC KEY CERTIFICATE \n";
+echo -e "\n GET IDA PUBLIC PARTNER CERTIFICATE \n";
 echo "AUTHMANAGER URL : $AUTHMANAGER_URL"
-echo "KEYMANAGER URL : $KEYMANAGER_URL"
+echo "IDA INTERNALURL URL : $IDA_INTERNAL_URL"
 
 #echo "* Request for authorization"
 curl -s -D - -o /dev/null -X "POST" \
@@ -24,12 +24,12 @@ curl -s -D - -o /dev/null -X "POST" \
     "secretKey": "'$KEYCLOAK_CLIENT_SECRET'",
     "appId": "'$AUTH_APP_ID'"
   }
-}' > temp.txt 2>&1 &
+}' > ida_temp.txt 2>&1 &
 
 sleep 10
 #TOKEN=$(cat -n temp.txt | sed -n '/Authorization:/,/\;.*/pI' |  sed 's/.*Authorization://i; s/$\n.*//I' | awk 'NR==1{print $1}')
 #TOKEN=$(cat -n temp.txt | grep -i Authorization: |  sed 's/.*Authorization://i; s/$\n.*//' | awk 'NR==1{print $1}')
-TOKEN=$( cat temp.txt | awk '/[aA]uthorization:/{print $2}' | sed -z 's/\n//g' | sed -z 's/\r//g')
+TOKEN=$( cat ida_temp.txt | awk '/[aA]uthorization:/{print $2}' | sed -z 's/\n//g' | sed -z 's/\r//g')
 
 if [[ -z $TOKEN ]]; then
   echo "Unable to Authenticate with authmanager. \"TOKEN\" is empty; EXITING";
@@ -41,9 +41,9 @@ echo -e "\nGot Authorization token from authmanager"
 curl -X "GET" \
   -H "Accept: application/json" \
   --cookie "Authorization=$TOKEN" \
-  "$KEYMANAGER_URL/v1/keymanager/getCertificate?applicationId=KERNEL&referenceId=SIGN" > result.txt
+  "$IDA_INTERNAL_URL/idauthentication/v1/internal/getCertificate?applicationId=IDA&referenceId=PARTNER" > ida_result.txt
 
-RESPONSE_COUNT=$( cat result.txt | jq .response )
+RESPONSE_COUNT=$( cat ida_result.txt | jq .response )
 if [[ -z $RESPONSE_COUNT ]]; then
   echo "Unable to \"response\" read result.txt file; EXITING";
   exit 1;
@@ -54,32 +54,18 @@ if [[ $RESPONSE_COUNT == null || -z $RESPONSE_COUNT ]]; then
   exit 1;
 fi
 
-RESULT=$(cat result.txt)
+RESULT=$(cat ida_result.txt)
 CERT=$(echo $RESULT | sed 's/.*certificate\":\"//gi' | sed 's/\".*//gI')
 
 if [[ -z $CERT ]]; then
-  echo "Unable to read certificate from result.txt; EXITING";
+  echo "Unable to read certificate from ida_result.txt; EXITING";
   exit 1;
 fi
 
-echo $CERT | sed -e 's/\\n/\n/g' > cert.pem
-openssl x509 -pubkey -noout -in cert.pem  > pubkey.pem
-echo -e "\n ******************* Signed certificate ************************************** \n $( cat pubkey.pem )"
-sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
+echo "$CERT" | sed -e 's/\\n/\n/g' > "$base_path_mosip_certs/ida-partner.cer";
 
-echo "public key creation complete"
+echo -e "\n ******************* IDA certificate ************************************** \n $( cat $base_path_mosip_certs/ida-partner.cer )"
+
+echo "IDA partner certificate downloaded successfully";
 echo "MOSIP_REGPROC_CLIENT_SECRET=''" >> ~/.bashrc
 source ~/.bashrc
-
-for file in mosip-context.json controller.json; do
-  curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/$file > $base_path_mosipvc/$file;
-  if ! [[ -s $base_path_mosipvc/$file ]]; then
-    echo "Unable to download \"$base_path_mosipvc/$file\" file from config-server;";
-    echo "FILE \"$base_path_mosipvc/$file\" is empty; EXITING";
-    exit 1;
-  fi
-  echo "Downloaded $file from config-server to $base_path_mosipvc/$file !!!";
-done
-
-
-exec "$@"
