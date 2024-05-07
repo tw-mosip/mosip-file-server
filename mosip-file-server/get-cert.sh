@@ -3,12 +3,15 @@
 #get date
 date=$(date --utc +%FT%T.%3NZ)
 
-#get secret
-clientsecret_env=$( curl $spring_config_url_env/decrypt -d $(curl $spring_config_url_env/*/$active_profile_env/$spring_config_label_env/registration-processor-$active_profile_env.properties | sed -n '/token.request.secretKey=/,/ /p' | cut -d '#' -f1 |  sed 's/.*secretKey=//; s/$\n.*//' | awk 'NR==1{print $1}' | awk -F '}' '{print $2}') )
+rm -rf temp.txt result.txt pubkey.pem cert.pem
+
+echo -e "\n Generate MOSIP's VC PUBLIC KEY CERTIFICATE \n";
+echo "AUTHMANAGER URL : $AUTHMANAGER_URL"
+echo "KEYMANAGER URL : $KEYMANAGER_URL"
 
 #echo "* Request for authorization"
 curl -s -D - -o /dev/null -X "POST" \
-  "$auth_url_env/v1/authmanager/authenticate/clientidsecretkey" \
+  "$AUTHMANAGER_URL/authenticate/clientidsecretkey" \
   -H "accept: */*" \
   -H "Content-Type: application/json" \
   -d '{
@@ -17,9 +20,9 @@ curl -s -D - -o /dev/null -X "POST" \
   "requesttime": "'$date'",
   "metadata": {},
   "request": {
-    "clientId": "mosip-regproc-client",
-    "secretKey": "'$clientsecret_env'",
-    "appId": "regproc"
+    "clientId": "'$KEYCLOAK_CLIENT_ID'",
+    "secretKey": "'$KEYCLOAK_CLIENT_SECRET'",
+    "appId": "'$AUTH_APP_ID'"
   }
 }' > temp.txt 2>&1 &
 
@@ -28,15 +31,40 @@ sleep 10
 #TOKEN=$(cat -n temp.txt | grep -i Authorization: |  sed 's/.*Authorization://i; s/$\n.*//' | awk 'NR==1{print $1}')
 TOKEN=$( cat temp.txt | awk '/[aA]uthorization:/{print $2}' | sed -z 's/\n//g' | sed -z 's/\r//g')
 
+if [[ -z $TOKEN ]]; then
+  echo "Unable to Authenticate with authmanager. \"TOKEN\" is empty; EXITING";
+  exit 1;
+fi
+
+echo -e "\nGot Authorization token from authmanager"
+
 curl -X "GET" \
   -H "Accept: application/json" \
   --cookie "Authorization=$TOKEN" \
-  "$key_url_env/v1/keymanager/getCertificate?applicationId=KERNEL&referenceId=SIGN" > result.txt
+  "$KEYMANAGER_URL/getCertificate?applicationId=KERNEL&referenceId=SIGN" > result.txt
+
+RESPONSE_COUNT=$( cat result.txt | jq .response )
+if [[ -z $RESPONSE_COUNT ]]; then
+  echo "Unable to \"response\" read result.txt file; EXITING";
+  exit 1;
+fi
+
+if [[ $RESPONSE_COUNT == null || -z $RESPONSE_COUNT ]]; then
+  echo "No response from keymanager server; EXITING";
+  exit 1;
+fi
 
 RESULT=$(cat result.txt)
 CERT=$(echo $RESULT | sed 's/.*certificate\":\"//gi' | sed 's/\".*//gI')
+
+if [[ -z $CERT ]]; then
+  echo "Unable to read certificate from result.txt; EXITING";
+  exit 1;
+fi
+
 echo $CERT | sed -e 's/\\n/\n/g' > cert.pem
 openssl x509 -pubkey -noout -in cert.pem  > pubkey.pem
+echo -e "\n ******************* Signed certificate ************************************** \n $( cat pubkey.pem )"
 sed -i "s&replace-public-key&$(cat pubkey.pem | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\\\r\\\\n/g')&g" $base_path_mosipvc/public-key.json
 
 echo "public key creation complete"
