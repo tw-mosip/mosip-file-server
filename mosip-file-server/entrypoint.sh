@@ -8,3 +8,6 @@ if [[ $? -gt 0 ]]; then
   echo "MOSIP's VC PUBLIC KEY Generation failed; EXITING";
   exit 1;
 fi
+
+echo 'starting nginx'&& nginx;
+sleep infinity;
